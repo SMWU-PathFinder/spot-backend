@@ -4,8 +4,7 @@ import com.pathfinder.spot.common.entity.BaseEntity;
 import com.pathfinder.spot.domain.placefav.PlaceFav;
 import com.pathfinder.spot.domain.report.Report;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -19,7 +18,9 @@ import static lombok.AccessLevel.PROTECTED;
 @Entity
 @Getter
 @DynamicInsert
+@Builder
 @NoArgsConstructor(access = PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @SQLDelete(sql = "UPDATE member SET status = 'DELETED' where id = ?")
 @SQLRestriction("status = 'ACTIVE'")
 public class Member extends BaseEntity {
