@@ -5,6 +5,7 @@ import com.pathfinder.spot.common.dto.ApiResponse;
 import com.pathfinder.spot.domain.member.Member;
 import com.pathfinder.spot.domain.member.MemberRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,7 @@ import java.util.List;
 import static com.pathfinder.spot.common.constants.ExceptionCode.FAIL_TO_SOCIAL_LOGIN;
 import static com.pathfinder.spot.domain.member.SocialLoginType.KAKAO;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 @Transactional
@@ -37,6 +39,7 @@ public class MemberService {
 
     public LoginResponse getMemberInfo(OauthMember oauthMember) {
         Member member = findOrCreateMember(oauthMember);
+        log.info("로그인한 사용자 정보: {}, {}, {}, {}", member.getEmail(), member.getNickname(), member.getSocialLoginType(), member.getSocialLoginId());
 
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")); // 기본 권한: ROLE_USER
         Authentication authentication = new UsernamePasswordAuthenticationToken( // 인증된 사용자 정보를 담는 객체를 생성 (이메일과 "ROLE_USER" 권한을 포함)
