@@ -41,7 +41,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private String socialLoginId;
 
-    @OneToMany(mappedBy = "member")
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Report> reports;
 
     @OneToMany(mappedBy = "member")
