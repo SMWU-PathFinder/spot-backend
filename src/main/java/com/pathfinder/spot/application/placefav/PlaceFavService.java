@@ -37,11 +37,12 @@ public class PlaceFavService {
         Category category = categoryRepository.findByCategoryName("기타")
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
         log.info("category Id: {}", category.getId());
-        PlaceFav.builder()
+        PlaceFav placeFav = PlaceFav.builder()
                 .placeName(placeName)
                 .member(member)
                 .category(category)
                 .build();
+        placeFavRepository.save(placeFav);
         return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 추가 성공"));
     }
 
