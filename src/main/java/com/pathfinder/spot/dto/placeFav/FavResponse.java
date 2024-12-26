@@ -1,16 +1,8 @@
 package com.pathfinder.spot.dto.placeFav;
 
+import java.util.List;
+
 public record FavResponse(
-        Long placeId,
-        String placeName,
-        String memo,
-        String categoryName) {
-    public static FavResponse of(Long placeId, String placeName, String memo, String categoryName) {
-        return new FavResponse(
-                placeId,
-                placeName,
-                memo,
-                categoryName
-        );
-    }
+        List<FavByCategoryResponse> favPlaceByCategories // 카테고리별 장소 리스트
+) {
 }

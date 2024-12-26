@@ -7,7 +7,9 @@ import com.pathfinder.spot.domain.category.CategoryRepository;
 import com.pathfinder.spot.domain.member.Member;
 import com.pathfinder.spot.domain.placefav.PlaceFav;
 import com.pathfinder.spot.domain.placefav.PlaceFavRepository;
+import com.pathfinder.spot.dto.placeFav.FavPlaceResponse;
 import com.pathfinder.spot.dto.placeFav.FavRequest;
+import com.pathfinder.spot.dto.placeFav.FavByCategoryResponse;
 import com.pathfinder.spot.dto.placeFav.FavResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,18 +49,25 @@ public class PlaceFavService {
         return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 추가 성공"));
     }
 
-    public ResponseEntity<ApiResponse<List<FavResponse>>> getPlaceFav(String email) {
+    public ResponseEntity<ApiResponse<FavResponse>> getPlaceFav(String email) {
         Member member = userInfoUtil.getUserInfoByEmail(email);
         List<PlaceFav> placeFavList = placeFavRepository.findByMember(member);
 
-        List<FavResponse> favResponses = placeFavList.stream()
-                .map(placeFav -> FavResponse.of(
-                        placeFav.getId(),
-                        placeFav.getPlaceName(),
-                        placeFav.getMemo(),
-                        placeFav.getCategory().getCategoryName()
+        // 카테고리별로 그룹화
+        Map<String, List<PlaceFav>> groupedByCategory = placeFavList.stream()
+                .collect(Collectors.groupingBy(placeFav -> placeFav.getCategory().getCategoryName()));
+
+        // DTO 변환
+        List<FavByCategoryResponse> categoryGroups = groupedByCategory.entrySet().stream()
+                .map(entry -> new FavByCategoryResponse(
+                        entry.getKey(),
+                        entry.getValue().stream()
+                                .map(FavPlaceResponse::of)
+                                .toList()
                 ))
                 .toList();
-        return ResponseEntity.ok(ApiResponse.success(favResponses, "즐겨찾기 조회 성공"));
+
+        FavResponse response = new FavResponse(categoryGroups);
+        return ResponseEntity.ok(ApiResponse.success(response, "카테고리별 즐겨찾기 조회 성공"));
     }
 }

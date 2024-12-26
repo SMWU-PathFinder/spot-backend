@@ -3,6 +3,7 @@ package com.pathfinder.spot.api.placefav;
 import com.pathfinder.spot.application.placefav.PlaceFavService;
 import com.pathfinder.spot.common.dto.ApiResponse;
 import com.pathfinder.spot.dto.placeFav.FavRequest;
+import com.pathfinder.spot.dto.placeFav.FavByCategoryResponse;
 import com.pathfinder.spot.dto.placeFav.FavResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class PlaceFavController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<FavResponse>>> getPlaceFav(Authentication authentication) {
+    public ResponseEntity<ApiResponse<FavResponse>>getPlaceFav(Authentication authentication) {
         String email = authentication.getName();
         return placeFavService.getPlaceFav(email);
     }
