@@ -1,7 +1,8 @@
 package com.pathfinder.spot.common.exceptions;
 
+import com.pathfinder.spot.common.constants.ExceptionCode;
 import com.pathfinder.spot.common.dto.ApiResponse;
-import com.pathfinder.spot.common.exceptions.BadRequestException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,8 +16,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import static com.pathfinder.spot.common.constants.ExceptionCode.INVALID_REQUEST;
-
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -27,17 +26,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request
     ) {
-        log.warn(e.getMessage(), e);
+        log.warn("Validation Error: ", e);
 
-        // 첫 번째 오류만 가져오기
         FieldError fieldError = e.getBindingResult().getFieldError();
-        if (fieldError != null) {
-            String errorMessage = fieldError.getDefaultMessage();
-
-            // 에러 응답 반환
-            return ResponseEntity.badRequest().body(ApiResponse.failure(String.valueOf(INVALID_REQUEST.getCode()), errorMessage));
-        }
-        return ResponseEntity.badRequest().body(ApiResponse.failure(String.valueOf(INVALID_REQUEST.getCode()), "잘못된 요청입니다."));
+        String fieldName = fieldError.getField();
+        String errorMessage = fieldError.getDefaultMessage();
+        return ResponseEntity.badRequest().body(
+                ApiResponse.failure(
+                        String.valueOf(ExceptionCode.VALIDATION_ERROR.getCode()),
+                        fieldName + ": " + errorMessage
+                )
+        );
     }
 
     @ExceptionHandler(Exception.class)
