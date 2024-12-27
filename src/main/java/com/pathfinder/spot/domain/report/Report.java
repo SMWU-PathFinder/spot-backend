@@ -24,12 +24,24 @@ public class Report extends BaseEntity {
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
+    private String reportTitle;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String reportDesc;
 
+    @Column(columnDefinition = "TEXT")
     private String reportAnswer;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
+
+    public static Report createReport(String title, String desc, Member member) {
+        return Report.builder()
+                .reportTitle(title)
+                .reportDesc(desc)
+                .member(member)
+                .build();
+    }
 }
