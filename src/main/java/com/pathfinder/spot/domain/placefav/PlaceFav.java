@@ -40,7 +40,14 @@ public class PlaceFav extends BaseEntity {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    public void updateFavs(FavUpdateRequest favRequest, Category category) {
+    public static PlaceFav createFav(String placeName, Member member, Category category) {
+        return PlaceFav.builder()
+                .placeName(placeName)
+                .member(member)
+                .category(category)
+                .build();
+    }
+    public void updateFav(FavUpdateRequest favRequest, Category category) {
         this.placeName = favRequest.placeName();
         this.memo = favRequest.memo();
         this.category = category;

@@ -32,18 +32,10 @@ public class PlaceFavService {
 
     @Transactional
     public ResponseEntity<ApiResponse<Void>> addPlaceFav(String email, FavRequest favRequest) {
-        String placeName = favRequest.placeName();
-        log.info("placeName: {}", placeName);
         Member member = userInfoUtil.getUserInfoByEmail(email);
-        log.info("member Id: {}", member.getId());
         Category category = categoryRepository.findByCategoryName("기타")
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
-        log.info("category Id: {}", category.getId());
-        PlaceFav placeFav = PlaceFav.builder()
-                .placeName(placeName)
-                .member(member)
-                .category(category)
-                .build();
+        PlaceFav placeFav = favRequest.toEntity(member, category);
         placeFavRepository.save(placeFav);
         return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 추가 성공"));
     }
@@ -83,7 +75,7 @@ public class PlaceFavService {
             throw new BadRequestException(ExceptionCode.INVALID_MEMBER);
         }
 
-        placeFav.updateFavs(favRequest, category);
+        placeFav.updateFav(favRequest, category);
         return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 수정 성공"));
     }
 
