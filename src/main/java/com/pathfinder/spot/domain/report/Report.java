@@ -36,4 +36,12 @@ public class Report extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
+
+    public static Report createReport(String title, String desc, Member member) {
+        return Report.builder()
+                .reportTitle(title)
+                .reportDesc(desc)
+                .member(member)
+                .build();
+    }
 }
