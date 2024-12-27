@@ -5,6 +5,7 @@ import com.pathfinder.spot.common.dto.ApiResponse;
 import com.pathfinder.spot.dto.placeFav.FavRequest;
 import com.pathfinder.spot.dto.placeFav.FavByCategoryResponse;
 import com.pathfinder.spot.dto.placeFav.FavResponse;
+import com.pathfinder.spot.dto.placeFav.FavUpdateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,5 +30,11 @@ public class PlaceFavController {
     public ResponseEntity<ApiResponse<FavResponse>>getPlaceFav(Authentication authentication) {
         String email = authentication.getName();
         return placeFavService.getPlaceFav(email);
+    }
+
+    @PatchMapping("/{placeFavId}")
+    public ResponseEntity<ApiResponse<Void>> updatePlaceFav(Authentication authentication, @PathVariable Long placeFavId, @RequestBody @Valid FavUpdateRequest favRequest) {
+        String email = authentication.getName();
+        return placeFavService.updatePlaceFav(email, placeFavId, favRequest);
     }
 }
