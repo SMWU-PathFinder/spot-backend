@@ -37,4 +37,10 @@ public class PlaceFavController {
         String email = authentication.getName();
         return placeFavService.updatePlaceFav(email, placeFavId, favRequest);
     }
+
+    @DeleteMapping("/{placeFavId}")
+    public ResponseEntity<ApiResponse<Void>> deletePlaceFav(Authentication authentication, @PathVariable Long placeFavId) {
+        String email = authentication.getName();
+        return placeFavService.deletePlaceFav(email, placeFavId);
+    }
 }

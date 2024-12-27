@@ -86,4 +86,18 @@ public class PlaceFavService {
         placeFav.updateFavs(favRequest, category);
         return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 수정 성공"));
     }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<Void>> deletePlaceFav(String email, Long placeFavId) {
+        Member member = userInfoUtil.getUserInfoByEmail(email);
+        PlaceFav placeFav = placeFavRepository.findById(placeFavId)
+                .orElseThrow(() -> new BadRequestException(ExceptionCode.INVALID_FAV));
+
+        if (!placeFav.getMember().equals(member)) {
+            throw new BadRequestException(ExceptionCode.INVALID_MEMBER);
+        }
+
+        placeFavRepository.delete(placeFav);
+        return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 삭제 성공"));
+    }
 }
