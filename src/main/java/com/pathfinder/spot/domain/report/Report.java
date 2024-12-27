@@ -24,9 +24,13 @@ public class Report extends BaseEntity {
     @GeneratedValue(strategy = IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
+    private String reportTitle;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String reportDesc;
 
+    @Column(columnDefinition = "TEXT")
     private String reportAnswer;
 
     @ManyToOne(fetch = FetchType.LAZY)
