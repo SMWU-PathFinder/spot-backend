@@ -1,16 +1,15 @@
 package com.pathfinder.spot.application.placefav;
 
 import com.pathfinder.spot.common.UserInfoUtil;
+import com.pathfinder.spot.common.constants.ExceptionCode;
 import com.pathfinder.spot.common.dto.ApiResponse;
+import com.pathfinder.spot.common.exceptions.BadRequestException;
 import com.pathfinder.spot.domain.category.Category;
 import com.pathfinder.spot.domain.category.CategoryRepository;
 import com.pathfinder.spot.domain.member.Member;
 import com.pathfinder.spot.domain.placefav.PlaceFav;
 import com.pathfinder.spot.domain.placefav.PlaceFavRepository;
-import com.pathfinder.spot.dto.placeFav.FavPlaceResponse;
-import com.pathfinder.spot.dto.placeFav.FavRequest;
-import com.pathfinder.spot.dto.placeFav.FavByCategoryResponse;
-import com.pathfinder.spot.dto.placeFav.FavResponse;
+import com.pathfinder.spot.dto.placeFav.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -69,5 +68,36 @@ public class PlaceFavService {
 
         FavResponse response = new FavResponse(categoryGroups);
         return ResponseEntity.ok(ApiResponse.success(response, "카테고리별 즐겨찾기 조회 성공"));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<Void>> updatePlaceFav(String email, Long placeFavId, FavUpdateRequest favRequest) {
+        Member member = userInfoUtil.getUserInfoByEmail(email);
+        PlaceFav placeFav = placeFavRepository.findById(placeFavId)
+                .orElseThrow(() -> new BadRequestException(ExceptionCode.INVALID_FAV));
+
+        Category category = categoryRepository.findByCategoryName(favRequest.categoryName())
+                .orElseThrow(() -> new BadRequestException(ExceptionCode.INVALID_CATEGORY));
+
+        if (!placeFav.getMember().equals(member)) {
+            throw new BadRequestException(ExceptionCode.INVALID_MEMBER);
+        }
+
+        placeFav.updateFavs(favRequest, category);
+        return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 수정 성공"));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<Void>> deletePlaceFav(String email, Long placeFavId) {
+        Member member = userInfoUtil.getUserInfoByEmail(email);
+        PlaceFav placeFav = placeFavRepository.findById(placeFavId)
+                .orElseThrow(() -> new BadRequestException(ExceptionCode.INVALID_FAV));
+
+        if (!placeFav.getMember().equals(member)) {
+            throw new BadRequestException(ExceptionCode.INVALID_MEMBER);
+        }
+
+        placeFavRepository.delete(placeFav);
+        return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 삭제 성공"));
     }
 }

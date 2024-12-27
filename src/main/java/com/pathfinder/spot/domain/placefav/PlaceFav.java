@@ -3,6 +3,7 @@ package com.pathfinder.spot.domain.placefav;
 import com.pathfinder.spot.common.entity.BaseEntity;
 import com.pathfinder.spot.domain.category.Category;
 import com.pathfinder.spot.domain.member.Member;
+import com.pathfinder.spot.dto.placeFav.FavUpdateRequest;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
@@ -38,4 +39,10 @@ public class PlaceFav extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    public void updateFavs(FavUpdateRequest favRequest, Category category) {
+        this.placeName = favRequest.placeName();
+        this.memo = favRequest.memo();
+        this.category = category;
+    }
 }
