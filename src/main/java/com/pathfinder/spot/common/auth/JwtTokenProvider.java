@@ -1,6 +1,8 @@
 package com.pathfinder.spot.common.auth;
 
 import com.pathfinder.spot.common.exceptions.BaseException;
+import com.pathfinder.spot.domain.member.Member;
+import com.pathfinder.spot.domain.member.MemberRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -16,8 +18,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class JwtTokenProvider {
 
     private final RedisTemplate<String, String> tokenRedisTemplate;
+    private final MemberRepository memberRepository;
 
     @Value("${jwt.secret.key}")
     private String secretKey;
@@ -45,8 +48,9 @@ public class JwtTokenProvider {
     private long refreshExpirationTime;
 
     @Autowired
-    public JwtTokenProvider(@Qualifier("tokenRedisTemplate") RedisTemplate<String, String> tokenRedisTemplate) {
+    public JwtTokenProvider(@Qualifier("tokenRedisTemplate") RedisTemplate<String, String> tokenRedisTemplate, MemberRepository memberRepository) {
         this.tokenRedisTemplate = tokenRedisTemplate;
+        this.memberRepository = memberRepository;
     }
 
     @PostConstruct
@@ -55,13 +59,9 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String createAccessToken(Authentication authentication) {
-        Claims claims = Jwts.claims().setSubject(authentication.getName());
-        // 권한 정보 추가
-        claims.put("roles", authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList()); // 예: ["ROLE_ADMIN", "ROLE_USER"]
-
+    public String createAccessToken(Member member) {
+        Claims claims = Jwts.claims().setSubject(member.getEmail());
+        claims.put("roles", List.of(member.getRole().name()));
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + accessExpirationTime);
 
@@ -72,9 +72,8 @@ public class JwtTokenProvider {
                 .signWith(key)
                 .compact();
     }
-
-    public String createRefreshToken(Authentication authentication) {
-        Claims claims = Jwts.claims().setSubject(authentication.getName());
+    public String createRefreshToken(String email) {
+        Claims claims = Jwts.claims().setSubject(email);
         claims.put("type", "refresh"); // 토큰 타입을 명시적으로 추가
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + refreshExpirationTime);
@@ -87,13 +86,25 @@ public class JwtTokenProvider {
                 .compact();
 
         tokenRedisTemplate.opsForValue().set(
-                authentication.getName(),
+                email,
                 refreshToken,
                 refreshExpirationTime,
                 TimeUnit.MILLISECONDS
         );
 
         return refreshToken;
+    }
+
+    public boolean isAdmin(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Object rolesObj = claims.get("roles");
+
+        if (rolesObj instanceof List<?>) {
+            @SuppressWarnings("unchecked")
+            List<String> roles = (List<String>) rolesObj;
+            return roles.contains("ROLE_ADMIN");
+        }
+        return false;
     }
 
     public Claims getClaimsFromToken(String token) {
@@ -103,15 +114,14 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = getClaimsFromToken(token);
         String email = claims.getSubject();
-
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Member not found"));
         // JWT에서 roles 클레임 추출
         List<String> roles = claims.get("roles", List.class);
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .toList();
-
-        // Authentication 객체 생성
-        return new UsernamePasswordAuthenticationToken(email, null, authorities);
+        return new UsernamePasswordAuthenticationToken(member, null, authorities);
     }
 
     // 메소드 오버로딩
