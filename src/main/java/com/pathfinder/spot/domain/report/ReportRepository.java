@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface ReportRepository extends JpaRepository<Report, Long> {
     List<Report> findByMemberOrderByUpdatedAtDesc(Member member);
+
+    List<Report> findAllByOrderByUpdatedAtDesc();
 }

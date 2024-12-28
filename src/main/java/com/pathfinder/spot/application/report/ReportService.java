@@ -31,15 +31,17 @@ public class ReportService {
         return ResponseEntity.ok(ApiResponse.success(null, "신고글 작성 성공"));
     }
 
-    public ResponseEntity<ApiResponse<ReportResponse>> getReport(String email) {
-        Member member = userInfoUtil.getUserInfoByEmail(email);
-        List<Report> reports = reportRepository.findByMemberOrderByUpdatedAtDesc(member);
-
+    public ResponseEntity<ApiResponse<ReportResponse>> getReport(Member member, Boolean isAdmin) {
+        List<Report> reports;
+        if (isAdmin) {
+            reports = reportRepository.findAllByOrderByUpdatedAtDesc();
+        } else {
+            reports = reportRepository.findByMemberOrderByUpdatedAtDesc(member);
+        }
         List<ReportList> reportLists = reports.stream()
                 .map(report -> ReportList.of(report, report.getReportAnswer() != null))
                 .peek(reportList -> log.info("reportList: {}", reportList))
                 .toList();
-
         ReportResponse reportResponse = new ReportResponse(reportLists);
         return ResponseEntity.ok(ApiResponse.success(reportResponse, "신고글 조회 성공"));
     }
