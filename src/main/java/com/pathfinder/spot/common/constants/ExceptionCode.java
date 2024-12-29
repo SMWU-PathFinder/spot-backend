@@ -17,6 +17,7 @@ public enum ExceptionCode {
     INVALID_MEMBER(2002, "접근 권한이 없습니다."),
     INVALID_FAV(2003, "존재하지 않는 즐겨찾기입니다."),
     INVALID_CATEGORY(2004, "존재하지 않는 카테고리입니다."),
+    INVALID_REPORT(2005, "존재하지 않는 신고글입니다."),
     INTERNAL_SERVER_ERROR(9999, "서버에서 에러가 발생하였습니다.");
     private final int code;
     private final String message;
