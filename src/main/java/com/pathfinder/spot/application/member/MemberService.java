@@ -4,18 +4,14 @@ import com.pathfinder.spot.common.auth.JwtTokenProvider;
 import com.pathfinder.spot.common.dto.ApiResponse;
 import com.pathfinder.spot.domain.member.Member;
 import com.pathfinder.spot.domain.member.MemberRepository;
+import com.pathfinder.spot.domain.member.MemberType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Collections;
-import java.util.List;
 
 import static com.pathfinder.spot.common.constants.ExceptionCode.FAIL_TO_SOCIAL_LOGIN;
 import static com.pathfinder.spot.domain.member.SocialLoginType.KAKAO;
@@ -39,20 +35,22 @@ public class MemberService {
 
     public LoginResponse getMemberInfo(OauthMember oauthMember) {
         Member member = findOrCreateMember(oauthMember);
-        log.info("로그인한 사용자 정보: {}, {}, {}, {}", member.getEmail(), member.getNickname(), member.getSocialLoginType(), member.getSocialLoginId());
-
-        List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")); // 기본 권한: ROLE_USER
-        Authentication authentication = new UsernamePasswordAuthenticationToken( // 인증된 사용자 정보를 담는 객체를 생성 (이메일과 "ROLE_USER" 권한을 포함)
-                member.getEmail(), "", authorities); // 빈 문자열로 비밀번호 설정
-
-        // 인증된 사용자 정보를 SecurityContext에 저장
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        log.info("로그인한 사용자 정보: {}, {}, {}, {}, {}", member.getEmail(), member.getNickname(), member.getRole().name(), member.getSocialLoginType(), member.getSocialLoginId());
 
         // JWT 토큰 생성
-        String accessToken = jwtTokenProvider.createAccessToken(authentication);
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+        String accessToken = jwtTokenProvider.createAccessToken(member);
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail());
 
-        return LoginResponse.of(member, accessToken, refreshToken);
+        // Access Token에서 권한 정보 추출 및 Authentication 생성
+        Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
+
+        // SecurityContext에 인증 정보 저장
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // ROLE_ADMIN 여부 확인
+        boolean isAdmin = jwtTokenProvider.isAdmin(accessToken);
+
+        return LoginResponse.of(member, isAdmin, accessToken, refreshToken);
     }
 
     public Member findOrCreateMember(OauthMember oauthMember) {

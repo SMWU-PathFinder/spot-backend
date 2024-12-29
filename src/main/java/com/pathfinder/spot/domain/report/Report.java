@@ -44,4 +44,8 @@ public class Report extends BaseEntity {
                 .member(member)
                 .build();
     }
+
+    public void completeAnswer(String answer) {
+        this.reportAnswer = answer;
+    }
 }
