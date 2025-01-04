@@ -1,0 +1,99 @@
+pipeline {
+    agent any
+
+    environment {
+        REPOSITORY_URI = credentials('docker-repository-uri')
+        EC2_IP = credentials('ec2-ip-address')
+        SSH_USER = credentials('ssh-user')
+        ENV_FILE = './spot.env'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git(
+                    branch: 'develop',
+                    url: 'https://github.com/SMWU-PathFinder/spot-backend.git',
+                    credentialsId: 'github token'
+                )
+            }
+            post {
+                success {
+                    sh 'echo "Successfully Cloned Repository"'
+                }
+                failure {
+                    sh 'echo "Fail Cloned Repository" > git_error.log'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'chmod +x ./gradlew'
+                sh './gradlew clean build -x test --no-daemon --build-cache'
+                sh 'ls -al ./build'
+            }
+        }
+
+        stage('Generate .env File') {
+            steps {
+                withCredentials([string(credentialsId: 'spot-env', variable: 'SPOT_ENV')]) {
+                    sh '''
+                        echo "$SPOT_ENV" | tr ' ' '\n' > ${ENV_FILE}
+                        cat ${ENV_FILE}
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    sh "docker build -t ${REPOSITORY_URI} ."
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([aws(credentialsId: 'aws-credentials', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh """
+                        aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${REPOSITORY_URI}
+                        docker push ${REPOSITORY_URI}
+                        docker rmi ${REPOSITORY_URI}
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Application Server') {
+            steps {
+                script {
+                    sshagent(['ec2-key-pair-id']) {
+                        sh """
+                            scp -o StrictHostKeyChecking=no ${ENV_FILE} ${SSH_USER}@${EC2_IP}:/home/ubuntu/spot.env
+                            ssh -tt -o StrictHostKeyChecking=no ${SSH_USER}@${EC2_IP} "
+                                set -e &&
+                                aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${REPOSITORY_URI} &&
+                                docker pull ${REPOSITORY_URI} &&
+                                docker stop spot || true &&
+                                docker rm spot || true &&
+                                docker run --env-file /home/ubuntu/spot.env -d -p 8080:8002 --name spot ${REPOSITORY_URI}
+                            "
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Pipeline completed successfully!"
+        }
+        failure {
+            echo "Pipeline failed!"
+            sh "rm -f ${ENV_FILE}"
+        }
+    }
+}
