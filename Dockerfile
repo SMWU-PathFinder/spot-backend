@@ -1,4 +1,4 @@
-# OpenJDK 17 Slim 버전의 이미지 사용함
+# OpenJDK 17 Slim 버전의 이미지를 사용
 FROM openjdk:17-jdk-slim-buster
 
 # 빌드된 jar 파일을 컨테이너로 복사
