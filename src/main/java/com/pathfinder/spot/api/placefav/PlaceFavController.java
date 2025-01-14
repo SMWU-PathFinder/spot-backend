@@ -2,10 +2,7 @@ package com.pathfinder.spot.api.placefav;
 
 import com.pathfinder.spot.application.placefav.PlaceFavService;
 import com.pathfinder.spot.common.dto.ApiResponse;
-import com.pathfinder.spot.dto.placeFav.FavRequest;
-import com.pathfinder.spot.dto.placeFav.FavByCategoryResponse;
-import com.pathfinder.spot.dto.placeFav.FavResponse;
-import com.pathfinder.spot.dto.placeFav.FavUpdateRequest;
+import com.pathfinder.spot.dto.placeFav.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +18,7 @@ public class PlaceFavController {
     private final PlaceFavService placeFavService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> addPlaceFav(Authentication authentication, @RequestBody @Valid FavRequest favRequest) {
+    public ResponseEntity<ApiResponse<FavPlaceIdResponse>> addPlaceFav(Authentication authentication, @RequestBody @Valid FavRequest favRequest) {
         String email = authentication.getName();
         return placeFavService.addPlaceFav(email, favRequest);
     }
@@ -33,13 +30,13 @@ public class PlaceFavController {
     }
 
     @PatchMapping("/{placeFavId}")
-    public ResponseEntity<ApiResponse<Void>> updatePlaceFav(Authentication authentication, @PathVariable Long placeFavId, @RequestBody @Valid FavUpdateRequest favRequest) {
+    public ResponseEntity<ApiResponse<FavPlaceIdResponse>> updatePlaceFav(Authentication authentication, @PathVariable Long placeFavId, @RequestBody @Valid FavUpdateRequest favRequest) {
         String email = authentication.getName();
         return placeFavService.updatePlaceFav(email, placeFavId, favRequest);
     }
 
     @DeleteMapping("/{placeFavId}")
-    public ResponseEntity<ApiResponse<Void>> deletePlaceFav(Authentication authentication, @PathVariable Long placeFavId) {
+    public ResponseEntity<ApiResponse<FavPlaceIdResponse>> deletePlaceFav(Authentication authentication, @PathVariable Long placeFavId) {
         String email = authentication.getName();
         return placeFavService.deletePlaceFav(email, placeFavId);
     }

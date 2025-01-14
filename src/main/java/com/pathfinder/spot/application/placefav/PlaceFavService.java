@@ -31,13 +31,14 @@ public class PlaceFavService {
     private final PlaceFavRepository placeFavRepository;
 
     @Transactional
-    public ResponseEntity<ApiResponse<Void>> addPlaceFav(String email, FavRequest favRequest) {
+    public ResponseEntity<ApiResponse<FavPlaceIdResponse>> addPlaceFav(String email, FavRequest favRequest) {
         Member member = userInfoUtil.getUserInfoByEmail(email);
         Category category = categoryRepository.findByCategoryName("기타")
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다."));
         PlaceFav placeFav = favRequest.toEntity(member, category);
         placeFavRepository.save(placeFav);
-        return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 추가 성공"));
+        FavPlaceIdResponse response = new FavPlaceIdResponse(placeFav.getId());
+        return ResponseEntity.ok(ApiResponse.success(response, "즐겨찾기 추가 성공"));
     }
 
     public ResponseEntity<ApiResponse<FavResponse>> getPlaceFav(String email) {
@@ -63,7 +64,7 @@ public class PlaceFavService {
     }
 
     @Transactional
-    public ResponseEntity<ApiResponse<Void>> updatePlaceFav(String email, Long placeFavId, FavUpdateRequest favRequest) {
+    public ResponseEntity<ApiResponse<FavPlaceIdResponse>> updatePlaceFav(String email, Long placeFavId, FavUpdateRequest favRequest) {
         Member member = userInfoUtil.getUserInfoByEmail(email);
         PlaceFav placeFav = placeFavRepository.findById(placeFavId)
                 .orElseThrow(() -> new BadRequestException(ExceptionCode.INVALID_FAV));
@@ -76,11 +77,12 @@ public class PlaceFavService {
         }
 
         placeFav.updateFav(favRequest, category);
-        return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 수정 성공"));
+        FavPlaceIdResponse response = new FavPlaceIdResponse(placeFav.getId());
+        return ResponseEntity.ok(ApiResponse.success(response, "즐겨찾기 수정 성공"));
     }
 
     @Transactional
-    public ResponseEntity<ApiResponse<Void>> deletePlaceFav(String email, Long placeFavId) {
+    public ResponseEntity<ApiResponse<FavPlaceIdResponse>> deletePlaceFav(String email, Long placeFavId) {
         Member member = userInfoUtil.getUserInfoByEmail(email);
         PlaceFav placeFav = placeFavRepository.findById(placeFavId)
                 .orElseThrow(() -> new BadRequestException(ExceptionCode.INVALID_FAV));
@@ -90,6 +92,7 @@ public class PlaceFavService {
         }
 
         placeFavRepository.delete(placeFav);
-        return ResponseEntity.ok(ApiResponse.success(null, "즐겨찾기 삭제 성공"));
+        FavPlaceIdResponse response = new FavPlaceIdResponse(placeFav.getId());
+        return ResponseEntity.ok(ApiResponse.success(response, "즐겨찾기 삭제 성공"));
     }
 }
